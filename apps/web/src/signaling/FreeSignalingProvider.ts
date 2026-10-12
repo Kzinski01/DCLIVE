@@ -49,7 +49,7 @@ export class FreeSignalingProvider implements SignalingProvider {
     const ttl = Math.max(1, Math.min(this.options.lifetimeMs ?? FREE_SESSION_LIFETIME_MS, FREE_SESSION_LIFETIME_MS));
     const expiresAt = Date.now() + ttl;
     this.role = 'host';
-    this.hostSession = { identity, controlToken: randomHex(32), expiresAt, maxViewers: Math.max(1, Math.min(maxViewers, 100)) };
+    this.hostSession = { identity, controlToken: randomHex(32), expiresAt, maxViewers: Number.isInteger(maxViewers) ? Math.max(1, Math.min(maxViewers, 100)) : 4 };
     this.expiry = setTimeout(() => { this.endSession(this.hostSession?.controlToken ?? ''); this.onMessage({ type: 'session-ended' }); }, ttl);
     return { type: 'created', sessionId: this.cloud.sessionId, controlToken: this.hostSession.controlToken, expiresAt,
       playerUrl: freeWatchUrl(base, { id: this.cloud.sessionId, publicKey: identity.publicKey, expiresAt }), iceServers: structuredClone(FREE_ICE_SERVERS) };
@@ -114,12 +114,15 @@ export class FreeSignalingProvider implements SignalingProvider {
     return new Promise((resolve, reject) => {
       const nonce = randomHex(32);
       let accepted = false;
+      let authenticating = false;
       const cleanup = () => { clearTimeout(timer); signal.removeEventListener('abort', fail); this.joinFailure = undefined; };
       const fail = () => { cleanup(); reject(new Error('Não foi possível estabelecer P2P. Verifique NAT, firewall e STUN; TURN está desativado.')); channel.close(); };
       const receive = async (message: ControlMessage) => {
         if (accepted) { this.viewerMessage(channel, message); return; }
         if (message.type === 'rejected') { cleanup(); reject(new Error(message.code)); channel.close(); return; }
         if (message.type !== 'welcome') { fail(); return; }
+        if (authenticating) { fail(); return; }
+        authenticating = true;
         if (!await this.validHostProof(connection, session, nonce, message)) { cleanup(); reject(new Error('Identidade do transmissor não confirmada.')); channel.close(); return; }
         if (signal.aborted || this.closed || !connection.open) { fail(); return; }
         accepted = true; channel.joined = true; cleanup();
@@ -157,6 +160,10 @@ export class FreeSignalingProvider implements SignalingProvider {
   sendSignal(peerId: string, data: SignalData): void {
     const channel = this.role === 'host' ? this.channels.get(peerId) : [...this.channels.values()][0];
     if (channel?.joined) channel.send({ type: 'signal', data });
+  }
+
+  disconnectViewer(peerId: string): void {
+    if (this.role === 'host') this.channels.get(peerId)?.close();
   }
 
   private removeViewer(peerId: string): void {
