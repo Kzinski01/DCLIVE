@@ -25,6 +25,16 @@ Código privado e player público têm branches/commits separados. O PR do playe
 
 ## Pendências de validação/conta
 
-Captura física/áudio do sistema e mídia em duas redes/alta resolução continuam pendentes. Native Tauri: build/inicialização não substituem ensaio completo de captura/IPC no WebView2. Branch principal sem proteção e security updates automáticos desabilitados são configurações de conta a revisar, sem alteração silenciosa. CodeQL será considerado executado somente quando houver resultado do workflow, não pela presença do YAML.
+Captura física/áudio do sistema e mídia em duas redes/alta resolução continuam pendentes. Native Tauri: build/inicialização não substituem ensaio completo de captura/IPC no WebView2. Branch principal sem proteção e security updates automáticos desabilitados são configurações de conta a revisar, sem alteração silenciosa.
 
-Não há merge automático nem publicação automática de Release. Artefatos locais e texto do PR são preparados para revisão; resultados de ZIP/hash/inicialização serão anexados ao finalizar a geração.
+Merge e publicação foram executados após autorização explícita do proprietário e sucesso dos checks. Não há automação de merge pelo Dependabot.
+
+## Entrega verificada
+
+Release Windows x64 0.1.1 gerado e permaneceu aberto por cinco segundos; Authenticode `NotSigned`. `dumpbin` confirmou x64, High Entropy VA, Dynamic Base e NX compatible, com imports diretos de DLLs do Windows. O ZIP inclui os relatórios, manifestos, validação e notices; o arquivo `.zip.sha256` é a referência do hash final após empacotamento. A versão anterior 0.1.0 foi preservada em ZIP separado.
+
+[PR #1](https://github.com/Kzinski01/DCLIVE/pull/1) integrado à main em `51f48d5d779517daee053fc9d0ae60ace055230e`, com somente as fontes do player. [Deploy Pages](https://github.com/Kzinski01/DCLIVE/actions/runs/38310298603) e [CodeQL na main](https://github.com/Kzinski01/DCLIVE/actions/runs/38310298608) concluíram com sucesso. Player público e registro PeerJS Cloud verificados novamente.
+
+Checks e CodeQL do PR concluíram com sucesso; CodeQL reportou zero resultados em 87 regras para o player. Isso não representa certificação nem análise CodeQL dos componentes privados.
+
+[Release v0.1.1](https://github.com/Kzinski01/DCLIVE/releases/tag/v0.1.1) publicado em 12/10/2026, 21:25 UTC, com `portable.zip` e `portable.zip.sha256`. O download público foi verificado: 3.338.419 bytes, SHA-256 `78f7237eb93282156aec7a165c5507ffe514a4db296d2ce642c515afadc2f7a5`. A tag corresponde ao merge acima. O Release anterior e seu ZIP 0.1.0 foram preservados. Os relatórios dentro do ZIP registram a auditoria antes da publicação; este documento registra o estado posterior.
