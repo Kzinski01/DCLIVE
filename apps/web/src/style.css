@@ -189,6 +189,8 @@ button:disabled, input:disabled, select:disabled { cursor: not-allowed; opacity:
 .stats-grid span, .stats-grid strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .stats-grid span { color: #898395; font-size: 9px; }
 .stats-grid strong { font: 700 11px Manrope, sans-serif; margin-top: 5px; }
+.peer-diagnostics { display: grid; gap: 8px; padding: 0 0 16px; }
+.peer-diagnostic { display: flex; flex-wrap: wrap; gap: 8px 16px; padding: 11px; border: 1px solid #ffffff12; border-radius: 8px; color: #aaa3b8; font-size: 11px; }
 .app-footer { display: flex; justify-content: space-between; gap: 15px; border-top: 1px solid #ffffff0d; padding: 15px 0 10px; color: #6c6878; font-size: 9px; }
 
 .viewer-shell { min-height: 100vh; background: var(--void); }
