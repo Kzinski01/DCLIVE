@@ -1,0 +1,53 @@
+name: Player gratuito no GitHub Pages
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.event.repository.private == false
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: read
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - run: npm ci
+      - run: npm test
+      - run: npm run lint
+      - name: Configurar somente o player estático
+        shell: bash
+        run: |
+          node --input-type=module -e 'const [owner,repo]=process.env.GITHUB_REPOSITORY.split("/"); const path=repo.toLowerCase()===`${owner.toLowerCase()}.github.io`?"/":`/${repo}/`; console.log(`VITE_PUBLIC_PLAYER_URL=https://${owner.toLowerCase()}.github.io${path}`); console.log("VITE_SIGNALING_PROVIDER=free")' >> "$GITHUB_ENV"
+      - run: npm run build:player
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist/player
+          retention-days: 1
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      pages: write
+      id-token: write
+    steps:
+      - name: Publicar player
+        id: deployment
+        uses: actions/deploy-pages@v4

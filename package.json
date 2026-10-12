@@ -1,0 +1,28 @@
+{
+  "name": "dclive-player",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "tsx --test apps/shared/*.test.ts apps/web/src/signaling/*.test.ts",
+    "lint": "biome lint apps/shared apps/web/src",
+    "build:player": "tsc --noEmit && vite build --mode pages"
+  },
+  "dependencies": {
+    "@fontsource/dm-sans": "^5.3.0",
+    "@fontsource/manrope": "^5.3.0",
+    "lucide-react": "^0.468.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "peerjs": "1.5.5"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.15",
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.7.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0",
+    "vite": "^6.3.0"
+  }
+}
