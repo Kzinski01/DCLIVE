@@ -8,5 +8,5 @@ export async function verifyPublishedPlayer(base: string, signal: AbortSignal): 
     const manifest = await response.json() as Record<string, unknown>;
     const expected = freeDeployment(base);
     if (Object.entries(expected).some(([key, value]) => manifest[key] !== value)) throw new Error(SERVICE_UNAVAILABLE);
-  } catch { throw new Error('O player do GitHub Pages ainda não está disponível ou usa configuração incompatível.'); }
+  } catch (error) { throw new Error(SERVICE_UNAVAILABLE, { cause: error }); }
 }

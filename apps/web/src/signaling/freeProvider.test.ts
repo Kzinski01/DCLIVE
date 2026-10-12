@@ -6,9 +6,21 @@ import { CloudConnection } from './CloudConnection';
 import { PeerTestBus } from './testPeer';
 import { parseWatchSession, type WatchSession } from '../../../shared/freeConfiguration';
 import type { ProviderEvent } from './types';
+import { SERVICE_UNAVAILABLE } from '../../../shared/service';
 
 const signal = () => new AbortController().signal;
 const provider = (bus: PeerTestBus, lifetimeMs?: number) => new FreeSignalingProvider({ playerUrl: 'http://127.0.0.1:5173/', allowLocalPlayer: true, peerLoader: bus.loader, lifetimeMs });
+
+test('unavailable public player reports the connection error before registering a Cloud session', async context => {
+  const bus = new PeerTestBus();
+  const host = new FreeSignalingProvider({ playerUrl: 'https://kzinski01.github.io/DCLIVE/', peerLoader: bus.loader });
+  context.mock.method(globalThis, 'fetch', async () => { throw new TypeError('Network request failed'); });
+  try {
+    await assert.rejects(host.connect(signal()), { message: SERVICE_UNAVAILABLE });
+    assert.equal(bus.options.length, 0);
+    await assert.rejects(host.createSession(4, signal()), { message: SERVICE_UNAVAILABLE });
+  } finally { host.disconnect(); bus.close(); }
+});
 
 async function session(bus: PeerTestBus, maxViewers = 4, lifetimeMs?: number) {
   const host = provider(bus, lifetimeMs);
