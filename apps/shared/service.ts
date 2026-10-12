@@ -6,6 +6,7 @@ export type ServiceManifest = {
   mode: 'public' | 'development';
   playerOrigin: string;
   signalingUrl: string;
+  features?: string[];
 };
 
 export function serviceOrigin(value: string, allowLocal = false): string {
@@ -34,6 +35,8 @@ export function parseServiceManifest(value: unknown, expectedOrigin: string, all
   const local = new URL(origin).protocol === 'http:' || ['localhost', '127.0.0.1', '[::1]'].includes(new URL(origin).hostname);
   if (manifest.protocolVersion !== 1 || manifest.playerOrigin !== origin || manifest.signalingUrl !== signalingEndpoint(origin)
     || manifest.mode !== (local ? 'development' : 'public')) throw new Error(SERVICE_UNAVAILABLE);
+  if (manifest.features !== undefined && (!Array.isArray(manifest.features) || manifest.features.length > 16
+    || manifest.features.some(feature => typeof feature !== 'string' || !/^[a-z-]{1,64}$/.test(feature)))) throw new Error(SERVICE_UNAVAILABLE);
   return manifest as ServiceManifest;
 }
 

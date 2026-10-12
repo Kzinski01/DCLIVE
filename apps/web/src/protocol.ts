@@ -1,6 +1,5 @@
-export type SignalData =
-  | { description: RTCSessionDescriptionInit }
-  | { candidate: RTCIceCandidateInit };
+import type { SignalData } from '../../shared/signaling';
+export type { SignalData } from '../../shared/signaling';
 
 export type CreatedSession = { type: 'created'; sessionId: string; controlToken: string; expiresAt: number; playerUrl: string; iceServers: RTCIceServer[] };
 
@@ -20,8 +19,11 @@ export function signalingUrl(): string {
 export function validateIceServers(servers: RTCIceServer[]): RTCIceServer[] {
   if (!Array.isArray(servers) || servers.length > 10) throw new Error(SERVICE_UNAVAILABLE);
   for (const server of servers) {
+    if (!server || typeof server !== 'object') throw new Error(SERVICE_UNAVAILABLE);
     const urls = Array.isArray(server.urls) ? server.urls : [server.urls];
-    if (!urls.length || urls.some(url => typeof url !== 'string' || !/^stuns?:[^\s]+$|^turns?:[^\s]+$/.test(url))) throw new Error(SERVICE_UNAVAILABLE);
+    if (!urls.length || urls.length > 10 || urls.some(url => typeof url !== 'string' || url.length > 2048 || !/^stuns?:[^\s]+$|^turns?:[^\s]+$/.test(url))) throw new Error(SERVICE_UNAVAILABLE);
+    if (server.username !== undefined && (typeof server.username !== 'string' || server.username.length > 256)
+      || server.credential !== undefined && (typeof server.credential !== 'string' || server.credential.length > 256)) throw new Error(SERVICE_UNAVAILABLE);
   }
   return servers;
 }
@@ -65,13 +67,12 @@ export function send(socket: WebSocket, message: object): void {
 }
 
 export function parseMessage(event: MessageEvent): ServerMessage | null {
-  try {
-    const value: unknown = JSON.parse(event.data as string);
-    return value && typeof value === 'object' && 'type' in value ? value as ServerMessage : null;
-  } catch { return null; }
+  return parseServerMessage(event.data);
 }
 
 export function errorMessage(error: unknown): string {
+  if (error instanceof Error && error.message === 'session-full') return 'A transmissão atingiu o limite de espectadores.';
+  if (error instanceof Error && error.message === 'negotiation-failed') return 'A conexão deste espectador foi encerrada pelo transmissor.';
   if (error instanceof DOMException) {
     if (error.name === 'NotAllowedError') return 'A seleção da tela foi cancelada ou bloqueada.';
     if (error.name === 'NotReadableError') return 'A fonte selecionada não pôde ser capturada.';
@@ -82,4 +83,5 @@ export function errorMessage(error: unknown): string {
 import { SERVICE_UNAVAILABLE } from '../../shared/service';
 import { configuredServiceOrigin } from './serviceConnection';
 import { signalingEndpoint } from '../../shared/service';
+import { parseServerMessage } from './serverMessages';
 

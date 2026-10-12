@@ -2,6 +2,7 @@ import { errorMessage, validateIceServers, type SignalData } from './protocol';
 import type { WatchSession } from '../../shared/freeConfiguration';
 import { createSignalingProvider } from './signaling/factory';
 import type { ProviderEvent, SignalingProvider, SignalingState } from './signaling/types';
+import { MAX_ICE_CANDIDATES, validSignal } from '../../shared/signaling';
 
 export type ViewerState = {
   phase: 'connecting' | 'waiting' | 'playing' | 'reconnecting' | 'ended' | 'error';
@@ -21,6 +22,9 @@ export class Viewing {
   private statsTimer?: number;
   private lastStats?: { bytes: number; frames: number; time: number };
   private closed = false;
+  private candidateCount = 0;
+  private answered = false;
+  private signalingState: SignalingState = 'offline';
   private startup = new AbortController();
   state: ViewerState = { phase: 'connecting', error: '', receivedMbps: 0, receivedFps: 0, height: 0 };
 
@@ -50,6 +54,7 @@ export class Viewing {
 
   private providerStatus(status: SignalingState, error?: string): void {
     if (this.closed) return;
+    this.signalingState = status;
     if (status === 'reconnecting') this.set({ phase: 'reconnecting' });
     else if (status === 'connected' && this.peer) this.set({ phase: this.state.receivedFps > 0 ? 'playing' : 'waiting', error: '' });
     else if (status === 'error') { this.set({ error: error || 'A sinalização foi interrompida.' }); this.reconnect(); }
@@ -64,22 +69,24 @@ export class Viewing {
         case 'error':
           if (message.code === 'session-unavailable') this.end();
           else if (message.code === 'connection-lost') this.reconnect();
-          else this.set({ phase: 'error', error: `Erro de sinalização: ${message.code}` });
+          else { this.set({ phase: 'error', error: errorMessage(new Error(message.code)) }); this.dispose(); }
           break;
       }
-    } catch (error) { this.set({ phase: 'error', error: errorMessage(error) }); }
+    } catch (error) { this.set({ phase: 'error', error: errorMessage(error) }); this.dispose(); }
   }
 
   private async makeOffer(peerId: string, iceServers: RTCIceServer[]): Promise<void> {
     this.peer?.close();
     this.peerId = peerId;
     this.pending = [];
+    this.candidateCount = 0; this.answered = false;
     this.lastStats = undefined;
     const peer = new RTCPeerConnection({ iceServers });
     this.peer = peer;
     peer.addTransceiver('video', { direction: 'recvonly' });
     peer.addTransceiver('audio', { direction: 'recvonly' });
     peer.ontrack = event => {
+      if (this.closed || this.peer !== peer) return;
       const stream = event.streams[0] ?? new MediaStream([event.track]);
       this.retries = 0;
       this.set({ phase: 'waiting', error: '' }, stream);
@@ -88,32 +95,43 @@ export class Viewing {
       if (event.candidate) this.provider?.sendSignal(peerId, { candidate: event.candidate.toJSON() });
     };
     peer.onconnectionstatechange = () => {
+      if (this.closed || this.peer !== peer) return;
       if (peer.connectionState === 'failed' || peer.connectionState === 'disconnected') this.reconnect();
     };
     await peer.setLocalDescription(await peer.createOffer());
+    if (this.closed || this.peer !== peer) return;
     if (peer.localDescription) this.provider?.sendSignal(peerId, { description: peer.localDescription });
     if (this.statsTimer) window.clearInterval(this.statsTimer);
     this.statsTimer = window.setInterval(() => void this.collectStats().catch(error => this.set({ error: `Falha ao ler métricas: ${errorMessage(error)}` })), 2000);
   }
 
   private async onSignal(data: SignalData): Promise<void> {
-    if (!this.peer) return;
+    const peer = this.peer;
+    if (!peer) return;
+    if (!validSignal(data)) throw new Error('Sinal inválido.');
     if ('description' in data && data.description.type === 'answer') {
-      await this.peer.setRemoteDescription(data.description);
-      for (const candidate of this.pending) await this.peer.addIceCandidate(candidate);
+      if (this.answered) throw new Error('Resposta duplicada ou fora de ordem.');
+      this.answered = true;
+      await peer.setRemoteDescription(data.description);
+      if (this.closed || this.peer !== peer) return;
+      for (const candidate of this.pending) await peer.addIceCandidate(candidate);
       this.pending = [];
     } else if ('candidate' in data) {
-      if (this.peer.remoteDescription) await this.peer.addIceCandidate(data.candidate);
+      if (++this.candidateCount > MAX_ICE_CANDIDATES) throw new Error('Limite de candidatos ICE excedido.');
+      if (peer.remoteDescription) await peer.addIceCandidate(data.candidate);
       else this.pending.push(data.candidate);
-    }
+    } else throw new Error('Descrição fora de ordem.');
   }
 
   private async collectStats(): Promise<void> {
-    if (!this.peer) return;
+    const peer = this.peer;
+    if (!peer) return;
     let bytes = 0;
     let frames = 0;
     let height = 0;
-    for (const report of (await this.peer.getStats()).values()) {
+    const stats = await peer.getStats();
+    if (this.closed || this.peer !== peer) return;
+    for (const report of stats.values()) {
       if (report.type === 'inbound-rtp' && report.kind === 'video') {
         bytes += report.bytesReceived ?? 0;
         frames += report.framesDecoded ?? 0;
@@ -126,7 +144,7 @@ export class Viewing {
       const seconds = (time - this.lastStats.time) / 1000;
       this.set({ receivedMbps: Math.max(0, (bytes - this.lastStats.bytes) * 8 / seconds / 1_000_000),
         receivedFps: Math.max(0, (frames - this.lastStats.frames) / seconds), height,
-        phase: frames > 0 ? 'playing' : this.state.phase });
+        phase: this.signalingState !== 'reconnecting' && peer.connectionState === 'connected' && frames > 0 ? 'playing' : this.state.phase });
     }
     this.lastStats = { bytes, frames, time };
   }
@@ -134,6 +152,7 @@ export class Viewing {
   private reconnect(): void {
     if (this.closed || this.retryTimer) return;
     this.peer?.close();
+    this.pending = []; this.lastStats = undefined;
     this.peer = undefined;
     const provider = this.provider;
     this.provider = undefined;
@@ -156,6 +175,7 @@ export class Viewing {
     if (this.retryTimer) window.clearTimeout(this.retryTimer);
     if (this.statsTimer) window.clearInterval(this.statsTimer);
     this.peer?.close();
+    this.peer = undefined; this.pending = []; this.lastStats = undefined;
     this.provider?.disconnect();
   }
 }

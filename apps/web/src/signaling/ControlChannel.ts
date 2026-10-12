@@ -9,8 +9,9 @@ export class ControlChannel {
   private closed = false;
   private heartbeat: ReturnType<typeof setInterval>;
 
-  constructor(readonly connection: DataConnection, receive: (message: ControlMessage) => void, closed: () => void) {
+  constructor(readonly connection: DataConnection, receive: (message: ControlMessage) => void, private readonly onClosed: () => void) {
     connection.on('data', raw => {
+      if (this.closed) return;
       const now = Date.now();
       if (now - this.windowStarted >= 10000) { this.windowStarted = now; this.messages = 0; }
       const message = parseControlMessage(raw);
@@ -19,7 +20,7 @@ export class ControlChannel {
       if (message.type === 'ping') this.send({ type: 'pong' });
       else if (message.type !== 'pong') receive(message);
     });
-    connection.on('close', () => { if (!this.closed) { this.closed = true; clearInterval(this.heartbeat); closed(); } });
+    connection.on('close', () => this.finishClose());
     connection.on('error', () => this.close());
     this.heartbeat = setInterval(() => {
       if (Date.now() - this.lastSeen > 15000) this.close();
@@ -34,5 +35,13 @@ export class ControlChannel {
     catch { this.close(); }
   }
 
-  close(): void { if (this.closed) return; clearInterval(this.heartbeat); this.connection.close(); }
+  private finishClose(): void {
+    if (this.closed) return;
+    this.closed = true; clearInterval(this.heartbeat); this.onClosed();
+  }
+
+  close(): void {
+    if (this.closed) return;
+    this.finishClose(); this.connection.close();
+  }
 }

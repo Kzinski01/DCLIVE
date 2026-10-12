@@ -11,6 +11,7 @@ export class LegacyNodeSignalingProvider implements SignalingProvider {
   private socket?: WebSocket;
   private manifest?: ServiceManifest;
   private closed = false;
+  private controlToken = '';
 
   constructor(private readonly discovery = discoverService) {}
 
@@ -30,6 +31,7 @@ export class LegacyNodeSignalingProvider implements SignalingProvider {
   async createSession(maxViewers: number, signal: AbortSignal): Promise<CreatedSession> {
     if (!this.socket || !this.manifest) throw new Error(SERVICE_UNAVAILABLE);
     const session = await createSession(this.socket, maxViewers, signal);
+    this.controlToken = session.controlToken;
     validateIceServers(session.iceServers);
     try { validateSessionUrl(session.playerUrl, session.sessionId, this.manifest.playerOrigin); }
     catch (error) { this.endSession(session.controlToken); throw error; }
@@ -45,7 +47,10 @@ export class LegacyNodeSignalingProvider implements SignalingProvider {
       const receive = (event: MessageEvent) => {
         const message = parseMessage(event);
         if (message?.type === 'error') { cleanup(); reject(new Error(message.code)); }
-        else if (message?.type === 'joined') { cleanup(); resolve({ peerId: message.peerId, iceServers: validateIceServers(message.iceServers) }); }
+        else if (message?.type === 'joined') {
+          try { const iceServers = validateIceServers(message.iceServers); cleanup(); resolve({ peerId: message.peerId, iceServers }); }
+          catch { fail(); }
+        }
       };
       const timer = setTimeout(fail, 8000);
       socket.addEventListener('message', receive); socket.addEventListener('close', fail); signal.addEventListener('abort', fail, { once: true });
@@ -55,6 +60,9 @@ export class LegacyNodeSignalingProvider implements SignalingProvider {
   }
 
   sendSignal(peerId: string, data: SignalData): void { if (this.socket) send(this.socket, { type: 'signal', peerId, data }); }
+  disconnectViewer(peerId: string): void {
+    if (this.socket && this.controlToken && this.manifest?.features?.includes('viewer-disconnect')) send(this.socket, { type: 'disconnect-viewer', peerId, controlToken: this.controlToken });
+  }
   endSession(controlToken: string): void { if (this.socket) send(this.socket, { type: 'stop', controlToken }); this.disconnect(); }
-  disconnect(): void { this.closed = true; this.socket?.close(); this.onStatus('offline'); }
+  disconnect(): void { this.closed = true; this.controlToken = ''; this.socket?.close(); this.onStatus('offline'); }
 }

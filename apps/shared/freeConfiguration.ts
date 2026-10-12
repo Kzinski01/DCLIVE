@@ -12,7 +12,7 @@ export function playerBaseUrl(value: string, allowLocal = false): string {
   serviceOrigin(url.origin, allowLocal);
   if (url.username || url.password || url.search || url.hash || !url.pathname.endsWith('/')) throw new Error('A URL do player deve terminar em /, sem parâmetros.');
   if (!allowLocal && !/^[a-z\d](?:[a-z\d-]*[a-z\d])?\.github\.io$/i.test(url.hostname)) throw new Error('O modo gratuito exige a URL HTTPS real do GitHub Pages.');
-  if (/\/\.\.?\//.test(value)) throw new Error('Caminho do player inválido.');
+  if (/\/\.\.?\//.test(value) || !/^\/(?:[A-Za-z0-9._~-]+\/)*$/.test(url.pathname)) throw new Error('Caminho do player inválido.');
   return url.href;
 }
 
@@ -27,9 +27,12 @@ export function freeWatchUrl(base: string, session: Required<WatchSession>): str
 export function parseWatchSession(url: URL): WatchSession | null {
   const watch = url.searchParams.get('watch');
   if (!watch) return null;
-  const publicKey = new URLSearchParams(url.hash.slice(1)).get('key') ?? '';
+  const fragment = new URLSearchParams(url.hash.slice(1));
+  const publicKey = fragment.get('key') ?? '';
   const expiresAt = Number(url.searchParams.get('expires'));
-  if (!FREE_SESSION_ID_PATTERN.test(watch) || !/^[A-Za-z0-9_-]{87}$/.test(publicKey) || !Number.isSafeInteger(expiresAt) || expiresAt <= 0) {
+  if (url.searchParams.getAll('watch').length !== 1 || url.searchParams.getAll('expires').length !== 1 || fragment.getAll('key').length !== 1
+    || !FREE_SESSION_ID_PATTERN.test(watch) || !/^[A-Za-z0-9_-]{87}$/.test(publicKey) || !Number.isSafeInteger(expiresAt) || expiresAt <= 0
+    || expiresAt > Date.now() + FREE_SESSION_LIFETIME_MS + 60000) {
     throw new Error('O link da transmissão é inválido ou está incompleto.');
   }
   return { id: watch, publicKey, expiresAt };

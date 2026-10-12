@@ -14,5 +14,6 @@ export interface SignalingProvider {
   createSession(maxViewers: number, signal: AbortSignal): Promise<CreatedSession>;
   joinSession(session: WatchSession, signal: AbortSignal): Promise<JoinedSession>;
   sendSignal(peerId: string, data: SignalData): void;
+  disconnectViewer?(peerId: string): void;
   endSession(controlToken: string): void;
 }
