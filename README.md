@@ -1,13 +1,30 @@
-# DC Live · Player web
+# DC Live 🚀
 
-Player estático do projeto pessoal DC Live. Este repositório contém somente o player, os provedores de sinalização necessários, testes e o workflow de Pages. O transmissor Windows e o backend Node.js são mantidos no projeto principal.
+**High-Quality Screen Sharing • Ultra-Low Latency • WebRTC P2P**
 
-Destino: https://kzinski01.github.io/DCLIVE/. A existência do repositório não comprova que o site foi publicado.
+DC Live é um aplicativo desktop para Windows desenvolvido para compartilhar tela e áudio em tempo real, com foco em alta qualidade de imagem, baixa latência e facilidade de uso.
 
-Abra o link completo gerado pelo transmissor (?watch=..., prazo e chave pública). Não é necessário login para assistir. Vídeo e áudio seguem diretamente por WebRTC P2P; GitHub Pages entrega apenas arquivos estáticos e PeerJS Cloud negocia o canal de controle.
+Com apenas alguns cliques, você pode configurar sua transmissão, gerar um link exclusivo e compartilhá-lo com outros jogadores. Os espectadores assistem diretamente pelo navegador, sem precisar instalar aplicativos, criar contas ou realizar login.
 
-TURN está desativado explicitamente. Algumas redes não permitem P2P e a conexão pode falhar. PeerServer Cloud é compartilhado; não há garantia de disponibilidade/cota ilimitada. O ID não autentica o transmissor: o handshake assinado verifica a chave pública do link e o fingerprint DTLS do canal. O token de controle nunca vai no link. TTL/limites são controles do transmissor, sem banco de sessões no Cloud.
+### ✨ Funcionalidades
 
-Para desenvolver: npm ci, npm test, npm run lint, npm run build:player. Habilite Settings → Pages → GitHub Actions para publicar. O workflow só executa em repositório público, usa runner padrão e não habilita cobrança, cache pago ou serviços de mídia comerciais. Respeite limites do GitHub Pages e do PeerJS Cloud; o projeto não oferece disponibilidade gratuita permanente.
+- 🎮 **Até 1440p e 120 FPS** — Suporte planejado para transmissões de alta qualidade, dependendo do hardware e navegador.
+- ⚡ **WebRTC P2P** — Comunicação direta para minimizar a latência.
+- 🎛️ **Bitrate personalizado** — Controle da qualidade conforme sua conexão.
+- 🖥️ **Compartilhamento de tela** — Transmita monitores ou janelas específicas.
+- 🔊 **Áudio do sistema** — Compartilhe também o som do computador.
+- 🔗 **Links instantâneos** — Gere e compartilhe links exclusivos de transmissão.
+- 🌐 **Player web** — Assista pelo navegador, sem instalar nada.
+- 🔒 **Sem login ou cadastro** — Experiência simples e direta.
+- 🚀 **Aceleração por GPU** — Codificação por hardware em dispositivos compatíveis.
+- 💻 **Windows Portable** — Aplicativo projetado para execução sem instalador tradicional.
 
-Os testes de contrato usam transporte controlado exclusivamente nos testes; o código de produção carrega o SDK PeerJS real. Mídia local com fonte sintética foi validada no projeto principal; captura real em Windows, alta qualidade e redes diferentes exigem testes próprios. Criação de link não comprova funcionamento da mídia.
+### 🛠️ Tecnologias
+
+**Tauri • Rust • React • TypeScript • WebRTC • WebSocket • GitHub Pages**
+
+### 🎯 Objetivo
+
+Oferecer uma alternativa leve e gratuita ao compartilhamento de tela tradicional, priorizando qualidade, desempenho e controle sobre a transmissão.
+
+*DC Live — Your screen. Your quality. Your link.*
