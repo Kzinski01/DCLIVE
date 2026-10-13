@@ -6,7 +6,7 @@ Este repositório contém **somente o player web** e os módulos necessários pa
 
 ## Assistir a uma transmissão
 
-Na versão candidata 0.2.0, transmissões novas exigem senha por padrão. Peça a senha separadamente ao streamer e informe-a no player; vídeo e áudio só são negociados após a autenticação. O streamer pode escolher explicitamente acesso por link e gerenciar espectadores no desktop. Veja o [guia de acesso e overlay](docs/overlay-and-access.md). O player desta branch precisa ser publicado antes de distribuir o portable 0.2.0; o Release 0.1.1 continua estável.
+Na versão candidata 0.2.0, transmissões novas exigem senha por padrão. Peça a senha separadamente ao streamer e informe-a no player; vídeo e áudio só são negociados após a autenticação. O streamer pode escolher explicitamente acesso por link e gerenciar espectadores no desktop. O [PR #11](https://github.com/Kzinski01/DCLIVE/pull/11) foi integrado à main e o player com senha está publicado: autenticação e mídia sintética foram verificadas no endereço público. Veja o [guia de acesso e overlay](docs/overlay-and-access.md). O portable 0.2.0 continua candidato para os testes pendentes; o Release 0.1.1 permanece estável.
 
 Abra o link completo enviado pelo transmissor. Ele contém o ID da sessão, um prazo de validade e a chave pública usada para confirmar a identidade de quem transmite. A [página do player](https://kzinski01.github.io/DCLIVE/) sozinha não abre uma transmissão. Se o navegador bloquear o som automático, clique em **Ativar áudio**.
 

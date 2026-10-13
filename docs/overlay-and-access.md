@@ -36,7 +36,9 @@ O Windows aplica click-through com a API nativa e `SetWindowDisplayAffinity` par
 
 ## Publicação e validação
 
-As fontes do player são preparadas em branch pública isolada por uma lista explícita; desktop/backend/Rust continuam no Git local. Publique o player dessa branch antes da distribuição estável 0.2.0. Até lá, o portable candidato sinaliza a dependência e falha ao iniciar com player antigo; não substitui o Release 0.1.1.
+As fontes do player foram preparadas em branch pública isolada por uma lista explícita; desktop/backend/Rust continuam no Git local. Após autorização, o [PR #11](https://github.com/Kzinski01/DCLIVE/pull/11) foi integrado à main em `ef4ed5915fe8f0ad7480ceed6c66c1074c303b79`, em 13/10/2026. [Pages](https://github.com/Kzinski01/DCLIVE/actions/runs/38477268325) e [CodeQL](https://github.com/Kzinski01/DCLIVE/actions/runs/38477268356) concluíram com sucesso. O player público anuncia `passwordAccess: 1`, seu bundle/CSP foram conferidos e o registro PeerJS foi verificado.
+
+O fluxo de senha foi repetido no player HTTPS publicado, sem interceptação dos arquivos: zero frames/stream antes de autenticar, senha incorreta negada, 41 frames decodificados em 640×360 e áudio RMS 0,7048 após a senha correta. Bloqueio, expulsão e rejeição do link anterior passaram. A fonte foi canvas/oscilador sintéticos; os peers usaram a mesma rede. O portable já gerado pode usar o player novo; o aviso de player pendente dentro do ZIP registra o momento anterior à publicação. A distribuição continua candidata e o Release 0.1.1 permanece preservado.
 
 ### Resultados em 13/10/2026
 
