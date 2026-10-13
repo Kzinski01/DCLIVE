@@ -18,6 +18,8 @@ O aplicativo oferece ajustes de resolução, FPS e bitrate. Esses valores são m
 
 ## Aplicativo Windows
 
+A [pré-release 0.2.0](https://github.com/Kzinski01/DCLIVE/releases/tag/v0.2.0) contém o novo `portable.zip` e SHA-256, com overlay e acesso privado por senha. O player compatível está publicado e o download foi conferido. Esta versão é para testes; captura física, redes distintas e desempenho ainda precisam de validação. Compartilhe a senha separadamente do link.
+
 A [Release 0.1.1](https://github.com/Kzinski01/DCLIVE/releases/tag/v0.1.1) contém `portable.zip` e o arquivo `portable.zip.sha256`. O aplicativo requer Windows 10/11 x64 e WebView2 Runtime. Extraia o ZIP, execute `DC-Live.exe`, selecione a fonte e clique em **Iniciar transmissão**. Compartilhe o link quando aparecer **Aguardando espectadores**; o status **LIVE** indica uma conexão de mídia estabelecida.
 
 ## Desenvolvimento do player

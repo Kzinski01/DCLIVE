@@ -51,6 +51,10 @@ O fluxo de senha foi repetido no player HTTPS publicado, sem interceptação dos
 
 Captura física e áudio do sistema no WebView2, exclusão visual no player pela fonte escolhida, duas redes, benchmark de CPU/GPU e 1080p/1440p em FPS alto permanecem pendentes. A automação Computer Use nativa não conectou ao helper; os testes do WebView foram feitos por CDP em instância de depuração isolada, com perfil próprio. Porta de depuração e identificador de teste não entram no build portable.
 
+## Pré-release publicada
+
+Em 13/10/2026 foi publicada a [v0.2.0](https://github.com/Kzinski01/DCLIVE/releases/tag/v0.2.0), com `portable.zip` (3.457.694 bytes) e `portable.zip.sha256`. O download público confere com SHA-256 `66804f659bc4a8fa0f6fd9a991a12a0514a9143fba4b9426d91166e6f5ed02bd`. A tag aponta para `138914616fefdf1672e5a7dddd83400f36320554`; a inicialização do executável 0.2.0 passou. O pacote contém a verificação atualizada do player com senha e nenhuma marca de player pendente. Os relatórios no ZIP registram o estágio anterior à publicação do próprio Release. A 0.1.1 foi preservada.
+
 ## Referências técnicas
 
 - [Tauri: janelas e comandos assíncronos no Windows](https://docs.rs/tauri/latest/tauri/webview/struct.WebviewWindowBuilder.html).
