@@ -4,7 +4,7 @@ Este repositório publica o player web do DC Live no GitHub Pages. Ele contém o
 
 Endereço do player: https://kzinski01.github.io/DCLIVE/. Antes de compilar o desktop, confira o resultado do workflow e execute free:check.
 
-Para assistir, abra o link completo gerado pelo transmissor, incluindo ?watch=..., o prazo e a chave pública. Você não precisa de login. Vídeo e áudio seguem diretamente por WebRTC P2P. O GitHub Pages entrega os arquivos do site, e o PeerJS Cloud negocia o canal de controle.
+Para assistir, abra o link completo gerado pelo transmissor, incluindo ?watch=..., o prazo e a chave pública. Hosts 0.2.0 exigem senha por padrão: informe-a no player para liberar a negociação de mídia. Acesso por link é uma escolha explícita do streamer, sem cadastro. Links anteriores mantêm seu handshake. Vídeo e áudio seguem diretamente por WebRTC P2P. O GitHub Pages entrega os arquivos do site, e o PeerJS Cloud negocia o canal de controle. Consulte docs/overlay-and-access.md.
 
 TURN está desativado. A conexão pode falhar em redes que bloqueiam P2P. O PeerJS Cloud é compartilhado e não oferece cota ou disponibilidade ilimitada. O ID por si só não autentica o transmissor: o handshake assinado verifica a chave pública do link e o fingerprint DTLS do canal. O link não contém o token de controle. O transmissor aplica o prazo e os limites da sessão, pois o Cloud não mantém um banco de sessões do DC Live.
 

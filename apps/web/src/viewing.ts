@@ -5,7 +5,7 @@ import type { ProviderEvent, SignalingProvider, SignalingState } from './signali
 import { MAX_ICE_CANDIDATES, validSignal } from '../../shared/signaling';
 
 export type ViewerState = {
-  phase: 'connecting' | 'waiting' | 'playing' | 'reconnecting' | 'ended' | 'error';
+  phase: 'connecting' | 'password' | 'waiting' | 'playing' | 'reconnecting' | 'ended' | 'error';
   error: string;
   receivedMbps: number;
   receivedFps: number;
@@ -28,7 +28,7 @@ export class Viewing {
   private startup = new AbortController();
   state: ViewerState = { phase: 'connecting', error: '', receivedMbps: 0, receivedFps: 0, height: 0 };
 
-  constructor(private readonly session: WatchSession, private readonly update: (state: ViewerState, stream?: MediaStream) => void, private readonly providerFactory = createSignalingProvider) {}
+  constructor(private readonly session: WatchSession, private readonly update: (state: ViewerState, stream?: MediaStream) => void, private readonly providerFactory = createSignalingProvider, private readonly password?: string) {}
 
   private set(change: Partial<ViewerState>, stream?: MediaStream): void {
     this.state = { ...this.state, ...change };
@@ -42,12 +42,18 @@ export class Viewing {
       provider.onMessage = message => { if (this.provider === provider) void this.onMessage(message); };
       provider.onStatus = (status, error) => { if (this.provider === provider) this.providerStatus(status, error); };
       await provider.connect(this.startup.signal);
-      const joined = await provider.joinSession(this.session, this.startup.signal);
+      const joined = await provider.joinSession(this.session, this.startup.signal, this.password);
       if (this.closed || this.provider !== provider) { provider.disconnect(); return; }
       await this.makeOffer(joined.peerId, validateIceServers(joined.iceServers));
     } catch (error) {
       if (this.closed) return;
       if (error instanceof Error && error.message === 'session-unavailable') { this.end(); return; }
+      if (error instanceof Error && ['password-required', 'password-invalid', 'auth-rate-limit'].includes(error.message)) {
+        this.dispose(); this.set({ phase: 'password', error: errorMessage(error) }); return;
+      }
+      if (error instanceof Error && ['link-invalid', 'entries-blocked', 'session-full', 'viewer-kicked'].includes(error.message)) {
+        this.dispose(); this.set({ phase: 'error', error: errorMessage(error) }); return;
+      }
       this.set({ phase: 'error', error: errorMessage(error) }); this.reconnect();
     }
   }
@@ -68,6 +74,7 @@ export class Viewing {
         case 'session-ended': this.end(); break;
         case 'error':
           if (message.code === 'session-unavailable') this.end();
+          else if (['password-required', 'password-invalid'].includes(message.code)) { this.dispose(); this.set({ phase: 'password', error: errorMessage(new Error(message.code)) }); }
           else if (message.code === 'connection-lost') this.reconnect();
           else { this.set({ phase: 'error', error: errorMessage(new Error(message.code)) }); this.dispose(); }
           break;

@@ -74,3 +74,16 @@ test('control channel closes once and cleans up even if the transport never open
   channel.close(); channel.close(); connection.emit('close'); connection.emit('error', new Error('Closed'));
   assert.equal(closed, 1);
 });
+
+test('unauthenticated channels expire even when they answer heartbeats', context => {
+  let now = 0;
+  context.mock.method(Date, 'now', () => now);
+  context.mock.timers.enable({ apis: ['setInterval'] });
+  const connection = Object.assign(new EventEmitter(), { open: true, close: () => {}, send: () => {}, dataChannel: { bufferedAmount: 0 } });
+  let closed = 0;
+  const channel = new ControlChannel(connection as unknown as DataConnection, () => {}, () => { closed++; });
+  try {
+    for (let i = 0; i < 4; i++) { now += 5000; connection.emit('data', JSON.stringify({ type: 'pong' })); context.mock.timers.tick(5000); }
+    assert.equal(closed, 1);
+  } finally { channel.close(); context.mock.timers.reset(); }
+});

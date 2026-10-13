@@ -3,6 +3,8 @@ import { discoverService } from '../serviceConnection';
 import { SERVICE_UNAVAILABLE, validateSessionUrl, type ServiceManifest } from '../../../shared/service';
 import type { WatchSession } from '../../../shared/freeConfiguration';
 import type { JoinedSession, SignalingProvider, SignalingState, ProviderEvent } from './types';
+import { randomPassword, type SessionSettings, type StreamAccess } from '../../../shared/streamAccess';
+import { randomHex } from './sessionIdentity';
 
 export class LegacyNodeSignalingProvider implements SignalingProvider {
   readonly name = 'Node.js (legado)';
@@ -28,9 +30,10 @@ export class LegacyNodeSignalingProvider implements SignalingProvider {
     this.onStatus('connected');
   }
 
-  async createSession(maxViewers: number, signal: AbortSignal): Promise<CreatedSession> {
+  async createSession(maxViewers: number, signal: AbortSignal, access: StreamAccess = { mode: 'private', password: randomPassword() }): Promise<CreatedSession> {
     if (!this.socket || !this.manifest) throw new Error(SERVICE_UNAVAILABLE);
-    const session = await createSession(this.socket, maxViewers, signal);
+    if (access.mode === 'private' && !this.manifest.features?.includes('session-access')) throw new Error('access-unsupported');
+    const session = await createSession(this.socket, maxViewers, signal, access);
     this.controlToken = session.controlToken;
     validateIceServers(session.iceServers);
     try { validateSessionUrl(session.playerUrl, session.sessionId, this.manifest.playerOrigin); }
@@ -38,7 +41,7 @@ export class LegacyNodeSignalingProvider implements SignalingProvider {
     return session;
   }
 
-  joinSession(session: WatchSession, signal: AbortSignal): Promise<JoinedSession> {
+  joinSession(session: WatchSession, signal: AbortSignal, password?: string): Promise<JoinedSession> {
     const socket = this.socket;
     if (!socket) return Promise.reject(new Error(SERVICE_UNAVAILABLE));
     return new Promise((resolve, reject) => {
@@ -55,13 +58,39 @@ export class LegacyNodeSignalingProvider implements SignalingProvider {
       const timer = setTimeout(fail, 8000);
       socket.addEventListener('message', receive); socket.addEventListener('close', fail); signal.addEventListener('abort', fail, { once: true });
       if (signal.aborted) { fail(); return; }
-      send(socket, { type: 'join', sessionId: session.id });
+      send(socket, { type: 'join', sessionId: session.id, password });
     });
   }
 
   sendSignal(peerId: string, data: SignalData): void { if (this.socket) send(this.socket, { type: 'signal', peerId, data }); }
   disconnectViewer(peerId: string): void {
     if (this.socket && this.controlToken && this.manifest?.features?.includes('viewer-disconnect')) send(this.socket, { type: 'disconnect-viewer', peerId, controlToken: this.controlToken });
+  }
+  async configureSession(controlToken: string, settings: SessionSettings): Promise<void> {
+    await this.manage({ type: 'configure-session', controlToken, settings });
+  }
+  async regenerateLink(controlToken: string): Promise<string> {
+    const managed = await this.manage({ type: 'regenerate-link', controlToken });
+    if (!managed.playerUrl || !managed.sessionId || !this.manifest) throw new Error('Resposta de link inválida.');
+    validateSessionUrl(managed.playerUrl, managed.sessionId, this.manifest.playerOrigin);
+    return managed.playerUrl;
+  }
+  private manage(command: object): Promise<{ playerUrl?: string; sessionId?: string }> {
+    const socket = this.socket;
+    if (!socket || !this.manifest?.features?.includes('session-access')) return Promise.reject(new Error('access-unsupported'));
+    const requestId = randomHex(16);
+    return new Promise((resolve, reject) => {
+      const cleanup = () => { clearTimeout(timer); socket.removeEventListener('message', receive); socket.removeEventListener('close', fail); };
+      const fail = () => { cleanup(); reject(new Error(SERVICE_UNAVAILABLE)); };
+      const receive = (event: MessageEvent) => {
+        const message = parseMessage(event);
+        if (message?.type === 'managed' && message.requestId === requestId) { cleanup(); resolve(message); }
+        else if (message?.type === 'error') { cleanup(); reject(new Error(message.code)); }
+      };
+      const timer = setTimeout(fail, 8000);
+      socket.addEventListener('message', receive); socket.addEventListener('close', fail);
+      send(socket, { ...command, requestId });
+    });
   }
   endSession(controlToken: string): void { if (this.socket) send(this.socket, { type: 'stop', controlToken }); this.disconnect(); }
   disconnect(): void { this.closed = true; this.controlToken = ''; this.socket?.close(); this.onStatus('offline'); }

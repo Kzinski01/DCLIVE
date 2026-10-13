@@ -25,7 +25,7 @@ test('unavailable public player reports the connection error before registering 
 async function session(bus: PeerTestBus, maxViewers = 4, lifetimeMs?: number) {
   const host = provider(bus, lifetimeMs);
   await host.connect(signal());
-  const created = await host.createSession(maxViewers, signal());
+  const created = await host.createSession(maxViewers, signal(), { mode: 'link' });
   const watch = parseWatchSession(new URL(created.playerUrl));
   assert(watch);
   return { host, created, watch };
@@ -95,7 +95,7 @@ test('expires the free session and rejects a changed identity', async () => {
   const malicious = provider(bus);
   try {
     await malicious.connect(signal());
-    await assert.rejects(malicious.joinSession({ ...first.watch, publicKey: 'a'.repeat(87) }, signal()), /Identidade/);
+    await assert.rejects(malicious.joinSession({ ...first.watch, publicKey: 'a'.repeat(87) }, signal()), /link-invalid/);
   } finally { malicious.disconnect(); first.host.disconnect(); }
   const expired = await session(bus, 1, 20);
   const client = provider(bus);
