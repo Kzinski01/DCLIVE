@@ -4,6 +4,7 @@ import { parseControlMessage, type ControlMessage } from './controlProtocol';
 export class ControlChannel {
   joined = false;
   private lastSeen = Date.now();
+  private openedAt = Date.now();
   private messages = 0;
   private windowStarted = Date.now();
   private closed = false;
@@ -23,7 +24,7 @@ export class ControlChannel {
     connection.on('close', () => this.finishClose());
     connection.on('error', () => this.close());
     this.heartbeat = setInterval(() => {
-      if (Date.now() - this.lastSeen > 15000) this.close();
+      if (!this.joined && Date.now() - this.openedAt > 15000 || Date.now() - this.lastSeen > 15000) this.close();
       else if (connection.open) this.send({ type: 'ping' });
     }, 5000);
   }

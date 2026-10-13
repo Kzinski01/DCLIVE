@@ -21,6 +21,11 @@ export function parseServerMessage(raw: unknown): ServerMessage | null {
       case 'signal': if (!peerId(message.peerId) || !validSignal(message.data)) return null; break;
       case 'viewer-count': if (!Number.isInteger(message.count) || Number(message.count) < 0 || Number(message.count) > 100) return null; break;
       case 'session-ended': break;
+      case 'managed':
+        if (typeof message.requestId !== 'string' || !/^[a-f0-9]{32}$/.test(message.requestId)
+          || message.playerUrl !== undefined && (typeof message.playerUrl !== 'string' || message.playerUrl.length > 4096)
+          || message.sessionId !== undefined && (typeof message.sessionId !== 'string' || !SESSION_ID_PATTERN.test(message.sessionId))) return null;
+        break;
       case 'error': if (typeof message.code !== 'string' || !/^[a-z-]{1,64}$/.test(message.code)) return null; break;
       default: return null;
     }

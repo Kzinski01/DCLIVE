@@ -1,4 +1,5 @@
 import type { SignalData } from '../../shared/signaling';
+import type { StreamAccess } from '../../shared/streamAccess';
 export type { SignalData } from '../../shared/signaling';
 
 export type CreatedSession = { type: 'created'; sessionId: string; controlToken: string; expiresAt: number; playerUrl: string; iceServers: RTCIceServer[] };
@@ -10,6 +11,7 @@ export type ServerMessage =
   | { type: 'joined'; peerId: string; iceServers: RTCIceServer[] }
   | { type: 'signal'; peerId: string; data: SignalData }
   | { type: 'session-ended' }
+  | { type: 'managed'; requestId: string; playerUrl?: string; sessionId?: string }
   | { type: 'error'; code: string };
 
 export function signalingUrl(): string {
@@ -42,7 +44,7 @@ export function openSocket(url = signalingUrl(), signal?: AbortSignal): Promise<
   });
 }
 
-export function createSession(socket: WebSocket, maxViewers: number, signal: AbortSignal): Promise<CreatedSession> {
+export function createSession(socket: WebSocket, maxViewers: number, signal: AbortSignal, access?: StreamAccess): Promise<CreatedSession> {
   return new Promise((resolve, reject) => {
     const cleanup = () => {
       window.clearTimeout(timer); socket.removeEventListener('message', onMessage);
@@ -58,7 +60,7 @@ export function createSession(socket: WebSocket, maxViewers: number, signal: Abo
     socket.addEventListener('message', onMessage); socket.addEventListener('close', fail);
     signal.addEventListener('abort', fail, { once: true });
     if (signal.aborted) { fail(); return; }
-    send(socket, { type: 'create', maxViewers });
+    send(socket, { type: 'create', maxViewers, access });
   });
 }
 
@@ -71,6 +73,8 @@ export function parseMessage(event: MessageEvent): ServerMessage | null {
 }
 
 export function errorMessage(error: unknown): string {
+  const accessErrors: Record<string, string> = { 'password-required': 'Informe a senha da transmissão.', 'password-invalid': 'Senha incorreta.', 'auth-rate-limit': 'Muitas tentativas. Aguarde um minuto.', 'entries-blocked': 'O streamer bloqueou novas entradas.', 'link-invalid': 'Este link foi substituído. Peça o novo link ao streamer.', 'viewer-kicked': 'Você foi desconectado pelo streamer.', 'access-unsupported': 'Este servidor não suporta o controle de acesso. Atualize o backend.' };
+  if (error instanceof Error && accessErrors[error.message]) return accessErrors[error.message];
   if (error instanceof Error && error.message === 'session-full') return 'A transmissão atingiu o limite de espectadores.';
   if (error instanceof Error && error.message === 'negotiation-failed') return 'A conexão deste espectador foi encerrada pelo transmissor.';
   if (error instanceof DOMException) {

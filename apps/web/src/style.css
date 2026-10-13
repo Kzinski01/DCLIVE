@@ -240,3 +240,23 @@ button:disabled, input:disabled, select:disabled { cursor: not-allowed; opacity:
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }
 }
+.session-panel { margin-top: 24px; padding: 24px; border: 1px solid #332b40; border-radius: 16px; background: #15121d; }
+.panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 15px; }
+.session-panel h2 { font-size: 18px; margin: 8px 0 16px; }
+.session-badge { color: #cfb4f8; border: 1px solid #5a456f; padding: 6px 10px; border-radius: 30px; font-size: 12px; }
+.session-panel p, .session-panel small { color: #ada3be; font-size: 12px; line-height: 1.6; }
+.session-option { display: flex; align-items: center; gap: 10px; margin: 13px 0; font-size: 13px; }
+.session-option input { accent-color: #aa75ee; }
+.session-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; margin: 12px 0; }
+.session-actions button, .viewer-list button, .password-form button { background: #30223f; color: #eadbff; border: 1px solid #66477f; border-radius: 8px; padding: 10px 14px; cursor: pointer; }
+.session-actions button:disabled, .viewer-list button:disabled { opacity: .5; cursor: default; }
+.session-panel label, .password-form label { font-size: 12px; color: #c7bcd6; }
+.session-panel input:not([type="checkbox"]):not([type="range"]), .session-panel select, .password-form input { color: #eee5fc; background: #100d17; border: 1px solid #473752; border-radius: 8px; padding: 10px; }
+.password-settings input { min-width: 260px; flex: 1; }
+.session-actions input[type="number"] { width: 85px; margin-left: 8px; }
+.viewer-list { padding: 0; list-style: none; }
+.viewer-list li { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-top: 1px solid #30273b; }
+.viewer-list strong, .viewer-list small { display: block; font-size: 12px; }
+.overlay-settings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 18px 0; }
+.overlay-settings-grid label { display: flex; flex-direction: column; gap: 8px; }
+.password-form { display: flex; flex-direction: column; gap: 12px; width: min(300px, 90%); text-align: left; }
