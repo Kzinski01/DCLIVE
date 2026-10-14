@@ -1,27 +1,47 @@
 # DC Live
 
-O DC Live permite transmitir uma tela ou janela de um computador Windows para espectadores no navegador. Quem transmite gera um link temporário no aplicativo; quem assiste abre esse link, sem instalar o player nem criar uma conta.
+Aplicativo para Windows que transmite tela e áudio por um link, sem cadastro. Seu objetivo é facilitar o compartilhamento de jogos, apresentações e outras atividades com espectadores no navegador.
 
-Este repositório contém **somente o player web** e os módulos necessários para publicá-lo no GitHub Pages. O aplicativo Windows e o backend Node usado em desenvolvimento ficam no projeto principal.
+## Como transmitir
 
-## Assistir a uma transmissão
+Requer Windows 10/11 x64 e WebView2 Runtime.
 
-Na versão candidata 0.2.0, transmissões novas exigem senha por padrão. Peça a senha separadamente ao streamer e informe-a no player; vídeo e áudio só são negociados após a autenticação. O streamer pode escolher explicitamente acesso por link e gerenciar espectadores no desktop. O [PR #11](https://github.com/Kzinski01/DCLIVE/pull/11) foi integrado à main e o player com senha está publicado: autenticação e mídia sintética foram verificadas no endereço público. Veja o [guia de acesso e overlay](docs/overlay-and-access.md). O portable 0.2.0 continua candidato para os testes pendentes; o Release 0.1.1 permanece estável.
+1. Baixe o [portable.zip da versão 0.2.0 (pré-release)](https://github.com/Kzinski01/DCLIVE/releases/tag/v0.2.0), extraia e abra **DC-Live.exe**.
+2. Clique em **Selecionar tela** e escolha uma tela ou janela.
+3. Ajuste resolução, FPS, bitrate e áudio.
+4. Confira a senha em **Acesso à transmissão**.
+5. Clique em **Iniciar transmissão**, copie o link e compartilhe a senha separadamente.
+6. Use **Encerrar transmissão** para finalizar e invalidar o link.
 
-Abra o link completo enviado pelo transmissor. Ele contém o ID da sessão, um prazo de validade e a chave pública usada para confirmar a identidade de quem transmite. A [página do player](https://kzinski01.github.io/DCLIVE/) sozinha não abre uma transmissão. Se o navegador bloquear o som automático, clique em **Ativar áudio**.
+**Aguardando espectadores** significa que o link está pronto. **LIVE** indica conexão de mídia com um espectador.
 
-## Como funciona
+## Funções e como usar
 
-O GitHub Pages entrega os arquivos do player. O PeerJS Cloud ajuda a estabelecer a conexão de controle, e vídeo e áudio seguem diretamente entre transmissor e espectador por WebRTC P2P. TURN está desativado na distribuição gratuita. Algumas redes podem bloquear a conexão direta; o serviço compartilhado também pode ficar indisponível.
+| Função | Como usar |
+| --- | --- |
+| Fonte | Confira a prévia e use **Trocar fonte** para compartilhar outra tela ou janela. |
+| Qualidade | Defina resolução e FPS antes de iniciar. O bitrate aceita valor personalizado e ajustes durante a live. |
+| Áudio | Ative **Áudio do sistema**, se a fonte permitir. |
+| Senha | **Exigir senha** vem ativado. Use **Gerar senha** ou defina uma de 8 a 128 caracteres. |
+| Acesso por link | Desmarque **Exigir senha** antes de iniciar. A escolha fica salva; qualquer pessoa com o link poderá assistir. |
+| Espectadores | Consulte a lista, use **Expulsar** e ajuste o **Limite de espectadores**. |
+| Bloquear entradas | **Bloquear novas entradas** mantém os espectadores atuais. **Permitir novas entradas** reabre o acesso. |
+| Trocar senha | Edite a senha e clique em **Alterar senha**. Todos precisarão entrar novamente. |
+| Novo link | **Regenerar link** invalida o anterior e desconecta os espectadores. Compartilhe o novo. |
+| Métricas | Abra **Diagnósticos em tempo real** para acompanhar FPS, bitrate e conexão. |
 
-O aplicativo oferece ajustes de resolução, FPS e bitrate. Esses valores são metas ou limites, e o resultado depende da fonte, do navegador, do computador e da rede. Foram testados o player público, a sinalização real e mídia sintética com espectadores. Ainda faltam testes de captura física e áudio do sistema no portátil, transmissão entre redes independentes e configurações de alta resolução. O projeto não inclui encoder nativo AMF, NVENC ou QSV, e o uso de GPU não foi comprovado.
+## Overlay sobre o jogo
 
-## Aplicativo Windows
+Em **Configurações → Streamer overlay**, ative, ajuste posição, tamanho, transparência e atalho e clique em **Aplicar overlay**.
 
-A [pré-release 0.2.0](https://github.com/Kzinski01/DCLIVE/releases/tag/v0.2.0) contém o novo `portable.zip` e SHA-256, com overlay e acesso privado por senha. O player compatível está publicado e o download foi conferido. Esta versão é para testes; captura física, redes distintas e desempenho ainda precisam de validação. Compartilhe a senha separadamente do link.
+- Exibe status, FPS real, bitrate, espectadores, RTT, estabilidade e tempo de transmissão.
+- **Ctrl+Shift+F9** mostra ou oculta por padrão.
+- **Click-through** deixa os cliques chegarem ao jogo. **Ocultar overlay da captura** solicita sua exclusão; confira no player.
 
-A [Release 0.1.1](https://github.com/Kzinski01/DCLIVE/releases/tag/v0.1.1) contém `portable.zip` e o arquivo `portable.zip.sha256`. O aplicativo requer Windows 10/11 x64 e WebView2 Runtime. Extraia o ZIP, execute `DC-Live.exe`, selecione a fonte e clique em **Iniciar transmissão**. Compartilhe o link quando aparecer **Aguardando espectadores**; o status **LIVE** indica uma conexão de mídia estabelecida.
+Use o jogo em janela ou sem bordas.
 
-## Desenvolvimento do player
+## Como assistir
 
-Use Node.js 24. Depois de `npm ci`, execute `npm test`, `npm run lint` e `npm run build:player`. O guia [PLAYER-OPERACAO.md](PLAYER-OPERACAO.md) descreve a publicação e os limites da infraestrutura. O player é publicado pelo workflow do GitHub Pages deste repositório.
+Abra o **link completo enviado pelo streamer** e informe a senha, se solicitada. Use **Ativar áudio**, volume e tela cheia no player. Não é necessário instalar nada para assistir.
+
+Este repositório hospeda o player web. [Documentação técnica](PLAYER-OPERACAO.md).
